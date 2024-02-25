@@ -243,6 +243,7 @@
     "birds.info()"
    ]
   },
+  
   {
    "cell_type": "code",
    "execution_count": 7,
@@ -254,6 +255,7 @@
        "443"
       ]
      },
+     
      "execution_count": 7,
      "metadata": {},
      "output_type": "execute_result"
@@ -263,6 +265,8 @@
     "birds.Name.nunique()"
    ]
   },
+
+  
   {
    "cell_type": "code",
    "execution_count": 11,
@@ -275,6 +279,7 @@
        "<Figure size 640x480 with 1 Axes>"
       ]
      },
+     
      "metadata": {},
      "output_type": "display_data"
     }
@@ -283,6 +288,7 @@
     "birds.plot(kind=\"line\")"
    ]
   },
+  
   {
    "cell_type": "code",
    "execution_count": null,
