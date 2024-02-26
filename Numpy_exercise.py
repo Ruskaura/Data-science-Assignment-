@@ -1106,27 +1106,568 @@ averages = sliding_window_average(array, window_size)
 print("Averages using a sliding window of size", window_size, ":", averages)
 
 # 76. Consider a one-dimensional array Z, build a two-dimensional array whose first row is (Z[0],Z[1],Z[2]) and each subsequent row is shifted by 1 (last row should be (Z[-3],Z[-2],Z[-1]) (★★★)
+import numpy as np
+
+Z = np.array([1, 2, 3, 4, 5])  # Example array
+
+# Create a two-dimensional array with shifting rows
+result = np.lib.stride_tricks.as_strided(Z, shape=(len(Z) - 2, 3), strides=(Z.strides[0], Z.strides[0]))
+
+print(result)
+[[1 2 3]
+ [2 3 4]
+ [3 4 5]]
+
 # 77. How to negate a boolean, or to change the sign of a float inplace? (★★★)
+x = True
+x = not x
+print(x)  # Output: False
+x = 3.14
+x *= -1
+print(x) # Output: -3.14
+
 # 78. Consider 2 sets of points P0,P1 describing lines (2d) and a point p, how to compute distance from p to each line i (P0[i],P1[i])? (★★★)
+import numpy as np
+
+def distance_to_line(P0, P1, p):
+    # Convert points to numpy arrays for easy computation
+    P0 = np.array(P0)
+    P1 = np.array(P1)
+    p = np.array(p)
+
+    # Calculate the vector representing the line
+    v = P1 - P0
+
+    # Calculate the vector representing the line segment from P0 to p
+    w = p - P0
+
+    # Calculate the squared length of the line segment
+    w_squared_length = np.dot(w, w)
+
+    # Calculate the parameter t which represents the projection of w onto v
+    t = np.dot(w, v) / np.dot(v, v)
+
+    # Check if the projection falls beyond the line segment
+    if t < 0:
+        return np.sqrt(np.dot(w, w))
+    elif t > 1:
+        return np.sqrt(np.dot(p - P1, p - P1))
+
+    # Calculate the closest point on the line to the point p
+    closest_point = P0 + t * v
+
+    # Calculate the distance between the closest point and the point p
+    distance = np.sqrt(np.dot(p - closest_point, p - closest_point))
+
+    return distance
+
+# Example usage:
+P0 = [1, 1]  # Start point of the line
+P1 = [4, 5]  # End point of the line
+p = [2, 3]   # Point p
+
+distance = distance_to_line(P0, P1, p)
+print(distance)
+    
 # 79. Consider 2 sets of points P0,P1 describing lines (2d) and a set of points P, how to compute distance from each point j (P[j]) to each line i (P0[i],P1[i])? (★★★)
+import numpy as np
+
+def distance_to_line(P0, P1, P):
+    distances = []
+    for i in range(len(P0)):
+        # Convert points to numpy arrays for easy computation
+        P0_i = np.array(P0[i])
+        P1_i = np.array(P1[i])
+
+        # Calculate the vector representing the line
+        v = P1_i - P0_i
+
+        for j in range(len(P)):
+            # Convert point to numpy array
+            p = np.array(P[j])
+
+            # Calculate the vector representing the line segment from P0 to p
+            w = p - P0_i
+
+            # Calculate the squared length of the line segment
+            w_squared_length = np.dot(w, w)
+
+            # Calculate the parameter t which represents the projection of w onto v
+            t = np.dot(w, v) / np.dot(v, v)
+
+            # Check if the projection falls beyond the line segment
+            if t < 0:
+                distance = np.sqrt(np.dot(w, w))
+            elif t > 1:
+                distance = np.sqrt(np.dot(p - P1_i, p - P1_i))
+            else:
+                # Calculate the closest point on the line to the point p
+                closest_point = P0_i + t * v
+
+                # Calculate the distance between the closest point and the point p
+                distance = np.sqrt(np.dot(p - closest_point, p - closest_point))
+
+            distances.append(distance)
+
+    return distances
+
+# Example usage:
+P0 = [[1, 1], [2, 2]]  # Start points of the lines
+P1 = [[4, 5], [3, 6]]  # End points of the lines
+P = [[2, 3], [5, 4], [1, 1]]  # Points to compute distance from
+
+distances = distance_to_line(P0, P1, P)
+print(distances)
+        
 # 80. Consider an arbitrary array, write a function that extract a subpart with a fixed shape and centered on a given element (pad with a fill value when necessary) (★★★)
+import numpy as np
+
+def extract_subpart(array, shape, center, fill_value=0):
+    # Calculate the starting index for the subpart
+    start_index = np.subtract(center, np.array(shape) // 2)
+    
+    # Calculate the ending index for the subpart
+    end_index = np.add(start_index, shape)
+    
+    # Create a mask to identify the valid indices within the original array
+    valid_indices = np.logical_and(start_index >= 0, end_index <= np.array(array.shape))
+    
+    # Initialize the subpart array with fill values
+    subpart = np.full(shape, fill_value)
+    
+    # Calculate the valid indices within the subpart array
+    valid_indices_subpart = np.logical_and(valid_indices, valid_indices.shape)
+    
+    # Calculate the valid indices within the original array
+    valid_indices_array = np.logical_and(valid_indices, array.shape)
+    
+    # Extract the valid portion from the original array and place it in the subpart array
+    subpart[valid_indices_subpart] = array[start_index[valid_indices_array[0]], start_index[valid_indices_array[1]]]
+    
+    return subpart
+
+# Example usage:
+array = np.array([[1, 2, 3, 4],
+                  [5, 6, 7, 8],
+                  [9, 10, 11, 12]])
+
+shape = (3, 3)  # Shape of the subpart
+center = (1, 1)  # Center element
+fill_value = 0  # Fill value for padding
+
+subpart = extract_subpart(array, shape, center, fill_value)
+print(subpart)
+    
 # 81. Consider an array Z = [1,2,3,4,5,6,7,8,9,10,11,12,13,14], how to generate an array R = [[1,2,3,4], [2,3,4,5], [3,4,5,6], ..., [11,12,13,14]]? (★★★)
+Z = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+R = [Z[i:i+4] for i in range(len(Z)-3)]
+
+print(R)
+[[1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7], [5, 6, 7, 8], [6, 7, 8, 9], [7, 8, 9, 10], [8, 9, 10, 11], [9, 10, 11, 12], [10, 11, 12, 13], [11, 12, 13, 14]]
+import numpy as np
+
+# Example matrix
+matrix = np.array([[1, 2, 3],
+                   [4, 5, 6],
+                   [7, 8, 9]])
+
+# Compute the rank of the matrix
+rank = np.linalg.matrix_rank(matrix)
+
+print("Matrix rank:", rank)
+
 # 82. Compute a matrix rank (★★★)
+import numpy as np
+
+# Example matrix
+matrix = np.array([[1, 2, 3],
+                   [4, 5, 6],
+                   [7, 8, 9]])
+
+# Compute the rank of the matrix
+rank = np.linalg.matrix_rank(matrix)
+
+print("Matrix rank:", rank)
+
 # 83. How to find the most frequent value in an array?
+from collections import Counter
+
+# Example array
+array = [1, 2, 3, 4, 2, 2, 3, 2, 5, 2, 3]
+
+# Count occurrences of each element
+counter = Counter(array)
+
+# Find the most common value
+most_common_value = counter.most_common(1)[0][0]
+
+print("Most frequent value:", most_common_value)
+
 # 84. Extract all the contiguous 3x3 blocks from a random 10x10 matrix (★★★)
+import numpy as np
+
+# Create a random 10x10 matrix
+matrix = np.random.randint(0, 10, size=(10, 10))
+
+# Extract all contiguous 3x3 blocks
+blocks = []
+for i in range(8):  # Loop through rows
+    for j in range(8):  # Loop through columns
+        block = matrix[i:i+3, j:j+3]
+        blocks.append(block)
+
+# Convert the list of blocks to a numpy array
+blocks_array = np.array(blocks)
+
+print(blocks_array)
+    
 # 85. Create a 2D array subclass such that Z[i,j] == Z[j,i] (★★★)
+import numpy as np
+
+class SymmetricArray(np.ndarray):
+    def __new__(cls, input_array):
+        obj = np.asarray(input_array).view(cls)
+        return obj
+
+    def __getitem__(self, index):
+        i, j = index
+        if i > j:
+            i, j = j, i
+        return super().__getitem__((i, j))
+
+# Example usage:
+arr = np.array([[1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9]])
+
+sym_arr = SymmetricArray(arr)
+
+print(sym_arr[0, 1])  # Output: 2
+print(sym_arr[1, 0])  # Output: 2
+
 # 86. Consider a set of p matrices with shape (n,n) and a set of p vectors with shape (n,1). How to compute the sum of of the p matrix products at once? (result has shape (n,1)) (★★★)
+import numpy as np
+
+def sum_of_matrix_products(matrices, vectors):
+    # Broadcast the matrices and vectors for element-wise multiplication
+    products = matrices * vectors[:, np.newaxis, :]
+
+    # Sum along the first axis (p matrices)
+    result = np.sum(products, axis=0)
+
+    return result
+
+# Example usage:
+p = 3
+n = 4
+
+# Generate random matrices and vectors
+matrices = np.random.rand(p, n, n)
+vectors = np.random.rand(p, n, 1)
+
+# Compute the sum of matrix products
+result = sum_of_matrix_products(matrices, vectors)
+
+print(result)
+
 # 87. Consider a 16x16 array, how to get the block-sum (block size is 4x4)? (★★★)
+import numpy as np
+
+# Create a 16x16 array (example)
+array = np.random.randint(0, 10, size=(16, 16))
+
+# Reshape the array into a 4D array with block size 4x4
+blocks = array.reshape(4, 4, 4, 4)
+
+# Sum along two axes to get the block-sum
+block_sum = blocks.sum(axis=(2, 3))
+
+print(block_sum)
+
 # 88. How to implement the Game of Life using numpy arrays? (★★★)
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+def update(frameNum, img, grid, N):
+    new_grid = grid.copy()
+    for i in range(N):
+        for j in range(N):
+            # Compute the sum of neighbors' states using toroidal boundary conditions
+            total = int((grid[i, (j-1)%N] + grid[i, (j+1)%N] +
+                         grid[(i-1)%N, j] + grid[(i+1)%N, j] +
+                         grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, (j+1)%N] +
+                         grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, (j+1)%N])/255)
+
+            # Apply Conway's rules
+            if grid[i, j] == ON:
+                if (total < 2) or (total > 3):
+                    new_grid[i, j] = OFF
+            else:
+                if total == 3:
+                    new_grid[i, j] = ON
+
+    # Update the data
+    img.set_data(new_grid)
+    grid[:] = new_grid[:]
+    return img
+
+# Game of Life parameters
+ON = 255
+OFF = 0
+N = 100
+updateInterval = 50
+
+# Create a grid of random initial states
+grid = np.random.choice([ON, OFF], N*N, p=[0.2, 0.8]).reshape(N, N)
+
+# Set up the animation
+fig, ax = plt.subplots()
+img = ax.imshow(grid, interpolation='nearest')
+ani = animation.FuncAnimation(fig, update, fargs=(img, grid, N),
+                              frames=10,
+                              interval=updateInterval,
+                              save_count=50)
+
+plt.show()
+            
 # 89. How to get the n largest values of an array (★★★)
+import numpy as np
+
+# Example array
+array = np.array([1, 5, 2, 10, 6, 3, 8])
+
+# Number of largest values to retrieve
+n = 3
+
+# Get indices of n largest values
+indices = np.argsort(array)[-n:]
+
+# Get n largest values
+largest_values = array[indices]
+
+print("Indices of {} largest values: {}".format(n, indices))
+print("N largest values:", largest_values)
+
 # 90. Given an arbitrary number of vectors, build the cartesian product (every combinations of every item) (★★★)
+from itertools import product
+
+# Example vectors
+vector1 = [1, 2, 3]
+vector2 = ['a', 'b']
+vector3 = ['x', 'y', 'z']
+
+# Build the Cartesian product
+cartesian_product = list(product(vector1, vector2, vector3))
+
+print(cartesian_product)
+
 # 91. How to create a record array from a regular array? (★★★)
+import numpy as np
+
+# Regular array
+regular_array = np.array([(1, 'John', 25),
+                          (2, 'Alice', 30),
+                          (3, 'Bob', 35)],
+                         dtype=[('ID', int), ('Name', 'U10'), ('Age', int)])
+
+# Convert to record array
+record_array = np.rec.array(regular_array)
+
+print(record_array)
+
 # 92. Consider a large vector Z, compute Z to the power of 3 using 3 different methods (★★★)
+import numpy as np
+
+# Create a large vector Z (example)
+Z = np.random.randint(1, 10, size=1000000)
+
+# Method 1: Element-wise multiplication
+result1 = Z * Z * Z
+
+# Method 2: Using np.power()
+result2 = np.power(Z, 3)
+
+# Method 3: Using the ** operator
+result3 = Z ** 3
+
+# Check if the results are the same
+print(np.allclose(result1, result2) and np.allclose(result1, result3))
+
 # 93. Consider two arrays A and B of shape (8,3) and (2,2). How to find rows of A that contain elements of each row of B regardless of the order of the elements in B? (★★★)
+import numpy as np
+
+# Example arrays A and B
+A = np.array([[1, 2, 3],
+              [4, 5, 6],
+              [2, 3, 1],
+              [7, 8, 9],
+              [3, 2, 1],
+              [1, 3, 2],
+              [6, 5, 4],
+              [9, 8, 7]])
+
+B = np.array([[2, 3],
+              [1, 2]])
+
+# Sort the rows of A and B
+sorted_A = np.sort(A, axis=1)
+sorted_B = np.sort(B, axis=1)
+
+# Reshape B for broadcasting
+sorted_B = sorted_B[:, :, np.newaxis]
+
+# Compare rows of A with each row of B
+rows_containing_elements = np.any(np.all(sorted_A[:, :, np.newaxis] == sorted_B, axis=1), axis=1)
+
+# Get the rows of A that contain elements of each row of B
+result = A[rows_containing_elements]
+
+print(result)
+
 # 94. Considering a 10x3 matrix, extract rows with unequal values (e.g. [2,2,3]) (★★★)
+import numpy as np
+
+# Example 10x3 matrix
+matrix = np.array([[1, 2, 3],
+                   [2, 2, 2],
+                   [4, 5, 6],
+                   [7, 7, 7],
+                   [2, 2, 3],
+                   [8, 8, 8],
+                   [9, 9, 9],
+                   [2, 2, 2],
+                   [5, 5, 5],
+                   [1, 2, 1]])
+
+# Extract rows with unequal values
+unequal_rows = matrix[np.any(matrix[:, 1:] != matrix[:, :-1], axis=1)]
+
+print(unequal_rows)
+
 # 95. Convert a vector of ints into a matrix binary representation (★★★)
+import numpy as np
+
+# Example vector of integers
+vector = np.array([2, 5, 7])
+
+# Compute the maximum value in the vector to determine the number of bits needed
+max_value = np.max(vector)
+
+# Calculate the number of bits needed to represent the maximum value
+num_bits = int(np.ceil(np.log2(max_value + 1)))
+
+# Initialize an empty matrix to store the binary representation
+matrix = np.zeros((len(vector), num_bits), dtype=int)
+
+# Convert each integer to its binary representation
+for i, num in enumerate(vector):
+    binary_repr = np.binary_repr(num, width=num_bits)
+    matrix[i] = [int(bit) for bit in binary_repr]
+
+print(matrix)
+
 # 96. Given a two dimensional array, how to extract unique rows? (★★★)
+import numpy as np
+
+# Example two-dimensional array
+array = np.array([[1, 2, 3],
+                  [4, 5, 6],
+                  [1, 2, 3],
+                  [7, 8, 9],
+                  [4, 5, 6]])
+
+# Extract unique rows
+unique_rows = np.unique(array, axis=0)
+
+print(unique_rows)
+
 # 97. Considering 2 vectors A & B, write the einsum equivalent of inner, outer, sum, and mul function (★★★)
+inner_product = np.einsum('i,i->', A, B)
+outer_product = np.einsum('i,j->ij', A, B)
+sum_result = np.einsum('i->', A)  # Sum of elements of vector A
+elementwise_mul = np.einsum('i,i->i', A, B)
+
 # 98. Considering a path described by two vectors (X,Y), how to sample it using equidistant samples (★★★)?
+import numpy as np
+
+# Example vectors (X, Y) describing the path
+X = np.array([0, 1, 3, 5, 6])
+Y = np.array([0, 2, 4, 3, 1])
+
+# Calculate the total path length
+path_length = np.sum(np.sqrt(np.diff(X)**2 + np.diff(Y)**2))
+
+# Define the number of equidistant samples
+num_samples = 10
+
+# Calculate the distance between equidistant samples
+step_size = path_length / (num_samples - 1)
+
+# Interpolate to generate equidistant samples
+samples_X = np.interp(np.arange(0, path_length, step_size), np.cumsum(np.sqrt(np.diff(X)**2 + np.diff(Y)**2)), X)
+samples_Y = np.interp(np.arange(0, path_length, step_size), np.cumsum(np.sqrt(np.diff(X)**2 + np.diff(Y)**2)), Y)
+
+# Combine X and Y coordinates of equidistant samples
+equidistant_samples = np.column_stack((samples_X, samples_Y))
+
+print(equidistant_samples)
+
 # 99. Given an integer n and a 2D array X, select from X the rows which can be interpreted as draws from a multinomial distribution with n degrees, i.e., the rows which only contain integers and which sum to n. (★★★)
+import numpy as np
+
+def is_multinomial_row(row, n):
+    # Check if the row contains only integers and if the sum equals n
+    return np.all(np.equal(np.mod(row, 1), 0)) and np.sum(row) == n
+
+def select_multinomial_rows(X, n):
+    # Select rows from X that satisfy the condition
+    return X[np.array([is_multinomial_row(row, n) for row in X])]
+
+# Example 2D array X
+X = np.array([[1, 2, 3],
+              [2, 3, 4],
+              [1, 1.5, 2.5],
+              [4, 5, 6]])
+
+# Example value of n
+n = 6
+
+# Select rows from X that can be interpreted as draws from a multinomial distribution with n degrees
+selected_rows = select_multinomial_rows(X, n)
+
+print(selected_rows)
+
 # 100. Compute bootstrapped 95% confidence intervals for the mean of a 1D array X (i.e., resample the elements of an array with replacement N times, compute the mean of each sample, and then compute percentiles over the means). (★★★)
+
+import numpy as np
+
+def bootstrap_confidence_interval(X, N, alpha=0.05):
+    # Generate N bootstrap samples with replacement
+    bootstrap_samples = np.random.choice(X, size=(N, len(X)), replace=True)
+
+    # Compute the mean of each bootstrap sample
+    means = np.mean(bootstrap_samples, axis=1)
+
+    # Compute the lower and upper percentiles for the confidence interval
+    lower_percentile = 100 * alpha / 2
+    upper_percentile = 100 * (1 - alpha / 2)
+
+    # Compute the confidence interval
+    lower_bound = np.percentile(means, lower_percentile)
+    upper_bound = np.percentile(means, upper_percentile)
+
+    return lower_bound, upper_bound
+
+# Example 1D array X
+X = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+# Number of bootstrap samples
+N = 1000
+
+# Compute the bootstrapped 95% confidence interval for the mean of X
+lower_bound, upper_bound = bootstrap_confidence_interval(X, N)
+
+print("Bootstrapped 95% confidence interval for the mean of X:", (lower_bound, upper_bound))
+    
